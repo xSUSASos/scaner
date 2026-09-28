@@ -83,3 +83,11 @@ main.py      запуск GUI
 tests/       pytest
 docs/STAGES.md  что сделано на каждом этапе и почему
 ```
+
+## Лицензия
+
+Код проекта — [MIT](LICENSE).
+
+Установщик включает сторонние компоненты со своими лицензиями: Tesseract OCR и языковые модели
+tessdata (Apache 2.0), Qt / PySide6 (LGPL v3), OpenCV (Apache 2.0), NumPy (BSD), Pillow (MIT-CMU),
+pillow-heif / libheif (BSD / LGPL), img2pdf (LGPL v3), pypdf (BSD).
