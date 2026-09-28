@@ -1,0 +1,16 @@
+# окружение и кеши
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# артефакты сборки (build.ps1)
+build/
+dist/
+
+# встроенный Tesseract: генерируется scripts/vendor_tesseract.py (~160 МБ бинарников)
+vendor/
+
+# личные фото и результаты CLI
+samples/
+out/
