@@ -41,7 +41,7 @@ def make_photo(corners_norm, size=(1200, 900), bg=(70, 60, 55), shadow=False,
     # Лёгкая текстура стола, чтобы Canny было что «отфильтровать».
     photo = cv2.add(photo, rng.integers(0, noise + 1, photo.shape, dtype=np.uint8))
 
-    sheet = make_sheet()
+    sheet = make_sheet(seed=seed)
     sh, sw = sheet.shape[:2]
     src = np.float32([[0, 0], [sw - 1, 0], [sw - 1, sh - 1], [0, sh - 1]])
     dst = np.float32(np.asarray(corners_norm) * [w - 1, h - 1])

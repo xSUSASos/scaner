@@ -40,6 +40,8 @@ class DetectParams:
     # Пороги Canny считаются от медианы яркости: low=(1-sigma)*m, high=(1+sigma)*m.
     # Больше sigma — шире диапазон, больше краёв (и мусора).
     canny_sigma: float = 0.33
+    # Потолок порогов (low, high) для второй, «мягкой» карты краёв.
+    canny_soft_cap: tuple[int, int] = (60, 120)
     # Морфологическое закрытие склеивает разрывы в контуре листа (стратегия 1).
     close_ksize: int = 5
     # Точность аппроксимации в долях периметра; перебираем, пока не получим 4 вершины.
@@ -70,13 +72,20 @@ def detect_document(img: np.ndarray, params: DetectParams = DetectParams(),
     gray = cv2.GaussianBlur(cv2.cvtColor(color, cv2.COLOR_BGR2GRAY),
                             (params.blur_ksize, params.blur_ksize), 0)
     raw_edges = _canny(gray, params.canny_sigma)
+    # Пороги «от медианы» на светлом кадре (светлый стол) получаются высокими,
+    # и слабый край «бумага -> светлый фон» теряется. Вторая карта краёв с
+    # ограниченными порогами даёт ДОПОЛНИТЕЛЬНЫХ кандидатов; оцениваем всех
+    # по первой карте — на пёстром фоне лишние края текста не мешают выбору.
+    soft_edges = _canny(gray, params.canny_sigma, params.canny_soft_cap)
     scorer = _Scorer(raw_edges, color)
 
     closed = _close(raw_edges, params.close_ksize)
     otsu = _otsu_mask(gray, params)
     candidates = ([("canny", q) for q in _contour_quads(closed, params)]
+                  + [("canny-soft", q) for q in _contour_quads(_close(soft_edges, params.close_ksize), params)]
                   + [("otsu", q) for q in _contour_quads(otsu, params)]
-                  + [("hough", q) for q in _hough_quads(raw_edges, params)])
+                  + [("hough", q) for q in _hough_quads(raw_edges, params)]
+                  + [("hough-soft", q) for q in _hough_quads(soft_edges, params)])
 
     # Оценка в два прохода: дешёвая «опора» — для всех кандидатов (у Хафа их сотни),
     # дорогой контраст — только для лучших.
@@ -118,10 +127,10 @@ def _downscale(img: np.ndarray, side: int) -> np.ndarray:
     return cv2.resize(img, (round(w * scale), round(h * scale)), interpolation=cv2.INTER_AREA)
 
 
-def _canny(gray: np.ndarray, sigma: float) -> np.ndarray:
+def _canny(gray: np.ndarray, sigma: float, cap: tuple[int, int] = (255, 255)) -> np.ndarray:
     median = float(np.median(gray))
-    low = int(max(0, (1.0 - sigma) * median))
-    high = int(min(255, (1.0 + sigma) * median))
+    low = int(min(cap[0], max(0, (1.0 - sigma) * median)))
+    high = int(min(cap[1], (1.0 + sigma) * median))
     return cv2.Canny(gray, low, high)
 
 

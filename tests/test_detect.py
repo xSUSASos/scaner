@@ -34,8 +34,11 @@ def test_detects_rotated_45_degrees():
         assert np.linalg.norm(result.corners - p, axis=1).min() < 0.02
 
 
-def test_light_background():
-    photo = make_photo(TILTED, bg=(185, 190, 195))
+@pytest.mark.parametrize("seed", range(5))
+def test_light_background(seed):
+    # Несколько разных листов: раньше тест проходил на одном «удачном» и не ловил
+    # потерю края на светлом столе (пороги Canny от медианы).
+    photo = make_photo(TILTED, bg=(185, 190, 195), seed=seed)
     result = detect_document(photo)
     assert result.found
     assert max_corner_error(result.corners, TILTED) < 0.02
