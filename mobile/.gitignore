@@ -1,0 +1,11 @@
+# зависимости и сгенерированное (npm ci / npm run vendor / npm run build)
+node_modules/
+vendor/
+www/
+
+# веб-файлы, которые Capacitor копирует в iOS-проект; сборки; список для SW (npm run vendor)
+ios/App/App/public/
+*.ipa
+precache.json
+.claude/
+test-assets/

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover: рисуем под «чёлкой» и полоской «домой», отступы даёт env(safe-area-inset-*) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Сканер</title>
+  <meta name="description" content="Сканер документов: обрезка, улучшение, PDF и распознавание текста прямо на iPhone">
+
+  <!-- Режим «приложения» при добавлении на экран «Домой» -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <!-- default: строка состояния сама подстраивается под светлую/тёмную тему
+       (black-translucent дал бы белый текст и на светлом фоне) -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Сканер">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+
+  <link rel="stylesheet" href="styles.css">
+  <!-- Воркер и OpenCV начинают грузиться сразу, как только выполнится модуль -->
+  <script type="module" src="src/app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <noscript>Для работы сканера нужен включённый JavaScript.</noscript>
+</body>
+</html>

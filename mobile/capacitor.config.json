@@ -1,0 +1,9 @@
+{
+  "appId": "io.github.xsusasos.scaner",
+  "appName": "Сканер",
+  "webDir": "www",
+  "backgroundColor": "#ffffff",
+  "ios": {
+    "contentInset": "never"
+  }
+}

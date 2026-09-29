@@ -1,0 +1,117 @@
+# Сборка НЕПОДПИСАННОГО iOS-приложения (.ipa) на macOS-машине GitHub.
+# Mac у себя не нужен: .ipa потом ставится с Windows через Sideloadly / AltStore,
+# они сами подписывают его вашим Apple ID (см. mobile/INSTALL_IOS.md).
+#
+# Запуск:
+#   * тег  mobile-v1.2.0  или  v1.2.0-ios  -> сборка + .ipa прикрепляется к релизу этого тега;
+#   * вручную: Actions -> iOS (unsigned .ipa) -> Run workflow -> .ipa в «Artifacts» запуска.
+name: iOS (unsigned .ipa)
+
+on:
+  push:
+    tags:
+      - "v*-ios"
+      - "mobile-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write # нужно, чтобы создать релиз и прикрепить к нему .ipa
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: mobile
+
+jobs:
+  ipa:
+    # Capacitor 8 требует Xcode 26+, он по умолчанию на образе macos-26.
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Зависимости
+        run: npm ci
+
+      - name: Тесты
+        run: npm test
+
+      - name: Библиотеки в vendor/
+        run: npm run vendor
+
+      - name: Сборка www/ и копирование в iOS-проект (cap sync)
+        # cap sync копирует www/ в ios/App/App/public и обновляет Package.swift плагинов.
+        run: npm run cap:sync
+
+      - name: Версия приложения
+        id: ver
+        shell: bash
+        run: |
+          # Из тега mobile-v1.2.0 / v1.2.0-ios берём 1.2.0, иначе — версию из package.json.
+          ref="${GITHUB_REF_NAME}"
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            v="${ref#mobile-v}"; v="${v#v}"; v="${v%-ios}"
+          else
+            v="$(node -p "require('./package.json').version")"
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "Версия $v, сборка ${GITHUB_RUN_NUMBER}"
+          xcodebuild -version
+
+      - name: xcodebuild (без подписи)
+        working-directory: mobile/ios/App
+        run: |
+          # Swift-пакеты (Capacitor и плагины) Xcode скачает сам — CocoaPods не нужен.
+          xcodebuild \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            MARKETING_VERSION="${{ steps.ver.outputs.version }}" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Упаковка в .ipa
+        working-directory: mobile/ios/App
+        run: |
+          # .ipa — это просто zip с папкой Payload/App.app внутри.
+          rm -rf Payload Scaner-unsigned.ipa
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qry Scaner-unsigned.ipa Payload
+          ls -lh Scaner-unsigned.ipa
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Scaner-unsigned-ipa
+          path: mobile/ios/App/Scaner-unsigned.ipa
+          if-no-files-found: error
+
+      - name: Прикрепить к релизу тега
+        if: github.ref_type == 'tag'
+        working-directory: mobile/ios/App
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          # Релиза для тега ещё нет — создаём; есть — просто заменяем файл.
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "Сканер для iPhone $TAG" \
+              --notes "Неподписанное приложение для установки через Sideloadly/AltStore. Инструкция: mobile/INSTALL_IOS.md"
+          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" Scaner-unsigned.ipa --clobber

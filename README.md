@@ -13,6 +13,13 @@
 
 Тихая установка: `Scaner-Setup-1.0.0.exe /VERYSILENT /CURRENTUSER /TASKS="desktopicon"`
 
+## Мобильная версия (iPhone)
+
+Та же обработка (порт core на OpenCV.js, результаты совпадают с десктопом) в виде PWA:
+**https://xsusasos.github.io/scaner/** → в Safari «Поделиться» → «На экран Домой».
+Нативная сборка `.ipa` (Capacitor) и все способы установки — в [mobile/INSTALL_IOS.md](mobile/INSTALL_IOS.md).
+Код — в папке [mobile/](mobile/).
+
 ## Требования для разработки
 
 - Windows 10/11, Python **3.12**

@@ -1,0 +1,65 @@
+# Публикация PWA (папка mobile/) на GitHub Pages: https://xsusasos.github.io/scaner/
+#
+# Разово в настройках репозитория: Settings -> Pages -> Source = "GitHub Actions"
+# (или: gh api -X POST repos/xSUSASos/scaner/pages -f build_type=workflow).
+name: PWA -> GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch: # ручной запуск кнопкой «Run workflow»
+
+permissions:
+  contents: read
+  pages: write # публиковать на Pages
+  id-token: write # подтверждать, что деплой идёт из этого репозитория
+
+# Одновременно только один деплой; начатый не прерываем, чтобы сайт не остался «полусобранным».
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: mobile
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Зависимости
+        run: npm ci
+
+      - name: Тесты
+        run: npm test
+
+      - name: Библиотеки в vendor/ (OpenCV, Tesseract, jsPDF...)
+        run: npm run vendor
+
+      - name: Сборка в www/
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: mobile/www
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

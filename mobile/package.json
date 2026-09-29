@@ -1,0 +1,29 @@
+{
+  "name": "scaner-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Сканер документов — PWA для iPhone",
+  "scripts": {
+    "vendor": "node scripts/vendor.mjs",
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "serve": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "cap:sync": "npm run build && npx cap sync ios"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/filesystem": "^8.1.3",
+    "@capacitor/ios": "^8.5.2",
+    "@capacitor/share": "^8.0.2",
+    "@techstark/opencv-js": "^5.0.0-release.1",
+    "@tesseract.js-data/eng": "^1.0.0",
+    "@tesseract.js-data/rus": "^1.0.0",
+    "pdf-lib": "^1.17.1",
+    "sortablejs": "^1.15.7",
+    "tesseract.js": "^7.0.0",
+    "tesseract.js-core": "^7.0.0"
+  }
+}
